@@ -39,7 +39,7 @@
 The imaging workflow is designed to classify chest X-rays into three categories:
 
 - **Normal**
-- **Tuberculosis (TB)**
+- **Tuberculosis**
 - **Pneumonia**
 
 The repository also includes binary TB-classification experiments, Grad-CAM visualizations, SHAP-based feature-importance tooling, and containerized service configuration. These capabilities are intended to support experimentation and model inspection, not to establish a clinical diagnosis.
