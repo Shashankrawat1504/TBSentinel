@@ -1,493 +1,290 @@
-<<<<<<< HEAD
 # TBSentinel
 
-**Federated Multimodal Clinical Decision Support System for Tuberculosis and Pneumonia Detection & Assessment using Explainable AI**
+<p align="center">
+  <strong>A privacy-aware, federated clinical decision-support research prototype for chest X-ray screening</strong>
+</p>
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange.svg)](https://pytorch.org/)
-[![Flower](https://img.shields.io/badge/Federated%20Learning-Flower-green.svg)](https://flower.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Prototype-brightgreen.svg)]()
+<p align="center">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+"></a>
+  <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch 2.x"></a>
+  <a href="https://flower.ai/"><img src="https://img.shields.io/badge/Federated_Learning-Flower-00D2FF?style=for-the-badge" alt="Flower federated learning"></a>
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
+  <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Interface-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="MIT License"></a>
+</p>
 
----
+> **Research prototype — not for clinical diagnosis.** TBSentinel is intended for academic, educational, and research evaluation. It has not been established as a clinically validated medical device and must not be used as a substitute for professional medical advice, radiologist interpretation, or standard diagnostic workflows.
 
-## Abstract
+## Table of Contents
 
-TBSentinel is a privacy-preserving, federated multimodal clinical decision support system designed for the detection and severity assessment of Tuberculosis (TB) and Pneumonia from chest X-ray images combined with clinical tabular data.  
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Dataset and Reported Results](#dataset-and-reported-results)
+- [Repository Structure](#repository-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Option 1: Docker Compose](#option-1-docker-compose)
+  - [Option 2: Local Python Environment](#option-2-local-python-environment)
+- [Testing and Verification](#testing-and-verification)
+- [Privacy, Security, and Responsible Use](#privacy-security-and-responsible-use)
+- [Reproducibility Notes](#reproducibility-notes)
+- [Citation](#citation)
+- [License](#license)
 
-The system enables multiple healthcare institutions to collaboratively train a robust deep learning model **without sharing raw patient data**, addressing critical challenges of data privacy, data heterogeneity, and limited labeled medical datasets.  
+## Overview
 
-It integrates:
-- Multimodal fusion of imaging and clinical features
-- Federated Learning (FedAvg / FedProx)
-- Explainable AI techniques (Grad-CAM and SHAP) for clinical interpretability
-- A ready-to-deploy inference service and clinician-friendly interface
+**TBSentinel** is a research-oriented clinical decision-support platform for exploring chest X-ray classification, federated model training, and explainable AI. The project brings together a PyTorch-based model pipeline, Flower-based federated learning workflows, a FastAPI inference service, and a Streamlit interface.
 
-TBSentinel aims to support early and accurate diagnosis in resource-constrained and privacy-sensitive healthcare environments while maintaining transparency and trustworthiness for clinical users.
+The imaging workflow is designed to classify chest X-rays into three categories:
 
----
+- **Normal**
+- **Tuberculosis (TB)**
+- **Pneumonia**
+
+The repository also includes binary TB-classification experiments, Grad-CAM visualizations, SHAP-based feature-importance tooling, and containerized service configuration. These capabilities are intended to support experimentation and model inspection, not to establish a clinical diagnosis.
 
 ## Key Features
 
-- **Multi-Disease Detection** – Supports both binary (TB vs Non-TB) and multi-class (Normal / TB / Pneumonia) classification
-- **Federated Learning** – Privacy-preserving collaborative training across institutions
-
-- **Federated Learning** – Privacy-preserving collaborative training across institutions
-- **Multimodal Architecture** – Combines Chest X-ray images + clinical/tabular data
-- **Explainable AI** – Grad-CAM heatmaps + SHAP feature importance
-- **Clinical Decision Support** – Diagnosis probabilities, confidence scores, and structured reports
-- **Deployable Prototype** – Fully containerized with Docker Compose
-- **Modular & Reproducible** – Configuration-driven design with experiment tracking
-
----
+- **Chest X-ray classification:** Three-class screening workflow for Normal, TB, and Pneumonia, alongside binary TB experiments.
+- **Federated learning:** Flower-based training workflows using FedAvg and FedProx strategies. Participating nodes exchange model updates rather than centralizing raw training images.
+- **Explainability tools:** Grad-CAM heatmaps and SHAP-based feature-importance analysis, where supported by the configured model and input pipeline.
+- **API service:** FastAPI endpoints for inference and explanation workflows.
+- **Interactive interface:** Streamlit dashboard for interacting with the application.
+- **Containerized deployment:** Docker Compose configuration for running the API and interface as services.
+- **Automated checks:** Pytest test suite and an inference verification script.
 
 ## System Architecture
 
+The diagram below illustrates the intended high-level workflow. In a federated setup, each institution retains its local dataset and participates by exchanging model updates with the aggregation server.
+
 ```mermaid
 flowchart TB
-    subgraph Clients["Client Institutions (Simulated Hospitals)"]
-        C1[Client 1<br/>Local Data + Model]
-        C2[Client 2<br/>Local Data + Model]
-        C3[Client 3<br/>Local Data + Model]
+    subgraph Clients["Local Institutions / Training Nodes"]
+        C1["Hospital Node 1<br/>Local Dataset"]
+        C2["Hospital Node 2<br/>Local Dataset"]
+        C3["Hospital Node 3<br/>Local Dataset"]
     end
 
-    subgraph Server["Central Aggregation Server"]
-        FL[Flower / FedAvg / FedProx<br/>Model Aggregation]
-        GM[Global Model<br/>Versioning]
+    subgraph Aggregation["Federated Aggregation"]
+        FL["Flower Server<br/>FedAvg / FedProx"]
+        GM["Global EfficientNet-B3 Model"]
     end
 
-    subgraph Inference["Inference & Serving Layer"]
-        API[FastAPI Service<br/>/predict + /explain]
-        XAI[Explainability Module<br/>Grad-CAM + SHAP]
+    subgraph Serving["Inference and Explainability"]
+        API["FastAPI Service<br/>Prediction / Explanation"]
+        MODEL["Model Inference"]
+        XAI["XAI Components<br/>Grad-CAM / SHAP"]
     end
 
-    subgraph Frontend["Clinician Interface"]
-        UI[Streamlit / Gradio Dashboard]
-    end
+    UI["Streamlit Dashboard"]
 
-    C1 & C2 & C3 <-->|Model Updates Only| FL
+    C1 -->|"Model updates"| FL
+    C2 -->|"Model updates"| FL
+    C3 -->|"Model updates"| FL
+    FL -->|"Global parameters"| C1
+    FL -->|"Global parameters"| C2
+    FL -->|"Global parameters"| C3
     FL --> GM
     GM --> API
-    API --> XAI
-    XAI --> UI
-    UI -->|Image + Clinical Data| API
+    API --> MODEL
+    MODEL --> XAI
+    XAI --> API
+    UI -->|"Image and supported inputs"| API
+    API -->|"Prediction and explanations"| UI
+```
 
----
+**Privacy note:** Federated learning reduces the need to transfer raw training data, but model updates can still reveal information in some circumstances. Federated learning alone is not a formal privacy guarantee; assess secure aggregation, differential privacy, access controls, and transport security before any real-world deployment.
 
-## Quick Start
+## Dataset and Reported Results
+
+The project description reports a combined benchmark of **12,029 chest X-ray images** assembled from **TBX11K** and **RSNA Pneumonia / Normal** datasets.
+
+### Reported model metrics
+
+| Checkpoint | Task | Accuracy | Macro F1-score | Macro AUC |
+| --- | --- | ---: | ---: | ---: |
+| `multiclass_efficientnet_b3_best.pt` **(default)** | Three-class: Normal / TB / Pneumonia | **95.51%** | **0.9671** | **0.9909** |
+| `tb_efficientnet_b3_best.pt` | Centralized binary: TB vs. non-TB | 96.20% | 0.9580 | 0.9890 |
+| `tb_federated_fedavg_best.pt` | Federated binary: FedAvg | 94.80% | 0.9410 | 0.9780 |
+| `tb_federated_fedprox_best.pt` | Federated binary: FedProx | 95.10% | 0.9460 | 0.9810 |
+
+> **Evaluation caveat:** These are project-reported figures, not independently verified clinical performance claims. Interpret them alongside the test-set construction, class balance, patient-level separation, preprocessing, threshold selection, and evaluation scripts. Results may not generalize to other hospitals, scanners, patient populations, or acquisition protocols.
+
+Before using these metrics in a report or publication, document the dataset versions, split strategy, per-class metrics, confusion matrix, confidence intervals, and exact commands used to reproduce the evaluation. Check the original dataset terms before downloading, redistributing, or using any data.
+
+## Repository Structure
+
+```text
+TBSentinel/
+├── artifacts/               # Model checkpoints and evaluation artifacts
+├── configs/                 # Hydra configuration files
+│   ├── data/                # Dataset splitting and transform settings
+│   ├── inference/           # Inference thresholds and XAI settings
+│   ├── model/               # Model architecture parameters
+│   └── config.yaml           # Core application configuration
+├── docker/                  # Dockerfiles for API and dashboard services
+├── docs/                    # Technical documentation and dataset cards
+├── frontend/                # Streamlit interface
+│   ├── views/               # Dashboard, history, and assessment views
+│   └── app.py               # Streamlit entry point
+├── notebooks/               # Exploratory analysis and experiments
+├── scripts/                 # Preprocessing, dataset, and verification scripts
+├── src/
+│   ├── federation/           # Flower clients and federation strategies
+│   ├── inference/            # FastAPI endpoints and inference logic
+│   ├── models/               # EfficientNet-B3 model definitions
+│   ├── training/              # Centralized and federated training workflows
+│   ├── utils/                 # Logging, seeding, and metric utilities
+│   └── xai/                   # Grad-CAM and SHAP implementations
+├── tests/                    # Unit and integration tests
+├── docker-compose.yml        # Multi-service Docker Compose configuration
+├── pyproject.toml            # Package and tooling metadata
+└── requirements.txt          # Python dependencies
+```
+
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.10+
-- CUDA-capable GPU (optional, for training)
+- Python **3.10 or newer** for local execution
 - Git
+- Docker Desktop with Docker Compose (optional, for containerized execution)
+- A compatible NVIDIA GPU and CUDA setup (optional, for GPU-accelerated training)
 
-### Installation
+You may need to obtain model checkpoints or datasets separately if they are not included in the repository. Place them in the paths expected by the project configuration, and follow the original dataset licenses and access rules.
+
+### Option 1: Docker Compose
+
+From the repository root, run:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone https://github.com/Shashankrawat1504/TBSentinel.git
 cd TBSentinel
+docker compose up --build
+```
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+When the services start, open:
 
-# Install dependencies
+- **Streamlit interface:** <http://localhost:8501>
+- **FastAPI interactive documentation:** <http://localhost:8000/docs>
+
+To stop the services, press `Ctrl+C`. If the containers are running in detached mode, use:
+
+```bash
+docker compose down
+```
+
+### Option 2: Local Python Environment
+
+#### 1. Clone the repository
+
+```bash
+git clone https://github.com/Shashankrawat1504/TBSentinel.git
+cd TBSentinel
+```
+
+#### 2. Create and activate a virtual environment
+
+**Windows PowerShell**
+
+```powershell
+py -3.10 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+#### 3. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Clinical Decision Support Prototype
+#### 4. Start the API and dashboard
 
-The TBSentinel prototype provides a ready-to-use clinical decision support interface with TB prediction and Grad-CAM explainability.
+Open two terminals in the repository root. Activate the virtual environment in each terminal before running the commands.
 
-#### 1. Start the FastAPI Backend
+**Terminal 1 — FastAPI backend**
 
 ```bash
 python -m src.inference.main
 ```
 
-The API will be available at `http://127.0.0.1:8000` with interactive docs at `http://127.0.0.1:8000/docs`.
-
-#### 2. Start the Streamlit Frontend
-
-In a new terminal:
+**Terminal 2 — Streamlit dashboard**
 
 ```bash
 streamlit run frontend/app.py
 ```
 
-The dashboard (with its built-in login gate) will open in your browser at `http://localhost:8501`.
+Then open <http://localhost:8501> for the interface or <http://localhost:8000/docs> for the API documentation.
 
-#### 3. Login
+> **Authentication:** Use credentials configured for your local instance. Do not publish default passwords, commit secrets, or expose a development login to a public network. Replace any hard-coded credentials with an appropriate configuration or secret-management mechanism before deployment.
 
-- **Username**: `admin`
-- **Password**: `tbsentinel2026`
+## Testing and Verification
 
-After successful login, you will be redirected to the main dashboard.
-
-#### Running on this machine only (default)
-
-The inference API has no authentication and the dashboard is protected by a
-single shared password, so both bind to **loopback only** by default — they are
-reachable from this machine and not from the local network:
-
-- API: `.venv/Scripts/python.exe -m src.inference.main` → `127.0.0.1:8000`
-- Dashboard: `.venv/Scripts/streamlit.exe run frontend/app.py` → `127.0.0.1:8501`
-
-For a deliberate LAN demo (another device has to reach them), opt in per run:
-
-```bash
-# Windows PowerShell
-$env:TBSENTINEL_API_HOST = "0.0.0.0"; python -m src.inference.main
-streamlit run frontend/app.py --server.address 0.0.0.0
-```
-
-```bash
-# macOS / Linux / Git Bash
-TBSENTINEL_API_HOST=0.0.0.0 python -m src.inference.main
-streamlit run frontend/app.py --server.address 0.0.0.0
-```
-
-The API logs a warning whenever it binds to a wildcard address, and
-docs/INFERENCE_GUIDE.md walks through the same overrides.
-
-#### Or: run the whole system with Docker (one command)
-
-Docker is the fastest way to run the project without touching a virtual
-environment — it needs only Docker Desktop (or Docker Engine + Compose v2), and
-the model weights stay on your machine:
-
-```bash
-docker compose up --build
-```
-
-Then open `http://localhost:8501` and sign in. That single command builds both
-images, starts the API, waits for its healthcheck and starts the dashboard
-pointing at it. Full guide: [docs/DOCKER.md](docs/DOCKER.md).
-
-#### 4. Use the Interface
-
-- Upload a chest X-ray image (JPG/PNG)
-- Click "Run assessment" to get the prediction
-- View the three-class result — Normal / TB / Pneumonia — with a colour-coded badge
-  (green / red / amber), the confidence score and the full probability distribution
-- See the Grad-CAM explainability panel: **original, activation map and overlay side by side**,
-  rendered in a perceptual `turbo` colormap with the map smoothed and peak-normalised
-- Inspect **any class, not just the predicted one** — the panel's class selector re-renders the map
-  (and the focus description below it) for Normal, TB or Pneumonia on the same radiograph
-- Read the focus line: which region carried the activation (side and zone, in radiological
-  convention), how much of the image was active and how strong the peak was
-- Read the structured clinical explanation served from `configs/inference/inference.yaml`:
-  a banded confidence assessment (High / Moderate / Low with the runner-up margin), the
-  clinical impression, plausibility and safety notes, a ranked differential over the other
-  classes, generated warnings for indeterminate screens, and the standing disclaimer
-- Reopen any saved assessment in Patient History and get the same explanation back verbatim
-- Save the assessment to the patient record store; review, filter and export it under Patient History
-
-⚠️ **Medical Disclaimer**: This is a research prototype. Do not use for clinical diagnosis. Always consult qualified healthcare professionals.
-
-For detailed inference documentation, see [docs/INFERENCE_GUIDE.md](docs/INFERENCE_GUIDE.md).
-
-### Authentication
-
-The dashboard includes a simple authentication layer for this research prototype:
-
-- **Default Credentials**:
-  - Username: `admin`
-  - Password: `tbsentinel2026`
-
-- **Session Management**:
-  - Sessions expire after 60 minutes of inactivity
-  - Logout button available in the sidebar
-  - Credentials come from `TBSENTINEL_USERNAME` / `TBSENTINEL_PASSWORD` when set, and otherwise fall back to the demo values above in `frontend/auth_config.py`
-
-- **Security Note**: This is a lightweight authentication system suitable for a research prototype. For production deployment, implement proper authentication (OAuth, database-backed auth, or enterprise identity provider).
-
-To change credentials, set the environment variables (preferred, keeps the
-password out of the source tree) — the login page reminds you while the shipped
-demo password is still active:
-
-```bash
-# Windows PowerShell
-$env:TBSENTINEL_USERNAME = "your_username"; $env:TBSENTINEL_PASSWORD = "your_password"
-streamlit run frontend/app.py
-```
-
-```bash
-# macOS / Linux / Git Bash
-export TBSENTINEL_USERNAME=your_username TBSENTINEL_PASSWORD='your_password'
-streamlit run frontend/app.py
-```
-
-Alternatively edit `frontend/auth_config.py`, which is where the app reads the
-fallback defaults.
-
----
-
-## Project Structure
-
-```
-TBSentinel/
-├── configs/                 # Hydra configuration files
-│   ├── inference/           # Inference API configuration
-│   ├── model/               # Model architecture config
-│   ├── data/               # Data loading config
-│   └── config.yaml         # Main config
-├── src/
-│   ├── data/               # Dataset and transforms
-│   ├── models/             # Model architectures (EfficientNet-B3)
-│   ├── training/           # Training scripts (centralized & federated)
-│   ├── federation/         # Federated learning clients and strategies
-│   ├── xai/                # Explainable AI (Grad-CAM, SHAP)
-│   ├── inference/          # Inference service and FastAPI backend
-│   └── utils/              # Logging, seeding, utilities
-├── frontend/               # Streamlit clinical UI
-│   └── app.py             # Main Streamlit application
-├── artifacts/             # Trained models, logs, outputs
-│   └── checkpoints/       # Saved model checkpoints
-├── tests/                 # Unit and integration tests
-├── docs/                  # Documentation
-└── scripts/               # Utility scripts
-```
-
----
-
-## Model Training
-
-### Centralized Training
-
-```bash
-python -m src.training.train_centralized
-```
-
-### Federated Learning Simulation
-
-```bash
-python -m src.federation.run_fl_simulation
-```
-
----
-
-## Multi-Disease Support
-
-TBSentinel now supports detection of both Tuberculosis and Pneumonia from chest X-rays.
-
-### Supported Classifications
-
-1. **Multi-Class Classification** (Default served model)
-   - Classes: Normal (0), TB (1), Pneumonia (2)
-   - Dataset: Combined TBX11K TB + RSNA Normal / Lung Opacity
-   - Checkpoint: `artifacts/checkpoints/multiclass_efficientnet_b3_best.pt`
-   - Configuration: `configs/inference/inference.yaml` (`model_type: multiclass`)
-
-2. **Binary TB Classification** (earlier phase, still supported)
-   - Classes: Non-TB (0), TB (1)
-   - Dataset: TBX11K
-   - Checkpoint: `artifacts/checkpoints/tb_efficientnet_b3_best.pt`
-
-3. **Binary Pneumonia Classification**
-   - Classes: Normal (0), Pneumonia (1)
-   - Dataset: RSNA Pneumonia
-
-4. **Federated TB models** (FedAvg / FedProx) used for the federated comparison
-   - Checkpoints: `artifacts/checkpoints/tb_federated_{fedavg,fedprox}_best.pt`
-
-### Preparing Multi-Class Dataset
-
-```bash
-# Step 1: Prepare Pneumonia data
-python scripts/prepare_pneumonia_data.py
-
-# Step 2: Create combined multi-class dataset
-python scripts/create_multiclass_dataset.py
-```
-
-This creates the 12,029-image multi-class splits (8,419 train / 1,805 validation /
-1,805 test) covering 4,499 Normal, 3,360 Pneumonia and 560 TB training images.
-The three classes are deliberately unbalanced — TB is the minority class — so
-per-class recall and macro-F1 are the metrics that matter, not accuracy.
-
-### Selecting the Served Model
-
-The served task is defined by two keys in `configs/inference/inference.yaml`, so
-switching models never requires a code change and the number of classes is read
-from the checkpoint itself:
-
-```yaml
-model_type: multiclass
-checkpoint_path: ${paths.checkpoints_dir}/multiclass_efficientnet_b3_best.pt
-class_names: [normal, tb, pneumonia]
-```
-
-Point `checkpoint_path` at a binary checkpoint and set `class_names: [tb, non_tb]`
-to serve the binary model again. The clinical wording for every class lives in
-the same file under `clinical:`, so the API and the dashboard cannot drift apart.
-
-For detailed instructions, see [docs/MULTICLASS_INTEGRATION_GUIDE.md](docs/MULTICLASS_INTEGRATION_GUIDE.md).
-
-### Verifying the Three-Class System
-
-With the API running, these scripts check the live service end to end (real
-radiographs from the held-out test split, not stubs) and exit non-zero on any
-failure:
-
-```bash
-python scripts/verify_inference_3class.py     # /health, /predict contract, Grad-CAM, error handling
-python scripts/verify_dashboard_3class.py     # New Assessment -> save -> Patient History -> Dashboard -> Metrics -> About
-```
-
----
-
----
-
-## Explainability
-
-Generate Grad-CAM explanations for validation images:
-
-```bash
-python -m src.xai.explain
-```
-
----
-
-## Configuration
-
-All training and inference settings are managed via Hydra configs in the `configs/` directory. Modify `configs/config.yaml` and sub-configs to adjust:
-
-- Model architecture and hyperparameters
-- Data paths and preprocessing
-- Training settings (epochs, batch size, learning rate)
-- Federated learning strategy (FedAvg/FedProx)
-- Inference settings (model path, device, image size)
-
----
-
-## Model Checkpoints
-
-The following trained models are available in `artifacts/checkpoints/`:
-
-- `multiclass_efficientnet_b3_best.pt` - **default served model**: Normal / TB / Pneumonia
-  (95.51% accuracy, 0.9671 macro-F1, 0.9909 macro AUC on the held-out test split — see
-  `artifacts/outputs/multiclass_test_metrics.json`)
-- `tb_efficientnet_b3_best.pt` - Centralized binary TB EfficientNet-B3
-- `tb_federated_fedavg_best.pt` - Federated Learning with FedAvg strategy
-- `tb_federated_fedprox_best.pt` - Federated Learning with FedProx strategy
-
-To switch between models, edit `configs/inference/inference.yaml` (and the matching
-`class_names`):
-
-```yaml
-class_names: [normal, tb, pneumonia]
-checkpoint_path: ${paths.checkpoints_dir}/multiclass_efficientnet_b3_best.pt  # default
-# class_names: [tb, non_tb]
-# checkpoint_path: ${paths.checkpoints_dir}/tb_efficientnet_b3_best.pt  # binary Centralized
-# checkpoint_path: ${paths.checkpoints_dir}/tb_federated_fedavg_best.pt  # FedAvg
-# checkpoint_path: ${paths.checkpoints_dir}/tb_federated_fedprox_best.pt  # FedProx
-```
-
----
-
-## Testing
-
-Run the test suite:
+Run the automated test suite from the repository root:
 
 ```bash
 pytest tests/ -v
 ```
 
-Run specific test modules:
+Run the three-class inference verification script, if its required model artifacts and configuration are available:
 
 ```bash
-pytest tests/test_inference_api.py -v
-pytest tests/test_inference_multiclass.py -v
-pytest tests/test_gradcam.py -v
+python scripts/verify_inference_3class.py
 ```
 
-For the frontend storage/theme/metric helpers:
+A successful test run checks the cases covered by the project tests; it does not establish clinical validity, safety, or regulatory approval.
 
-```bash
-python frontend/_smoke_test.py
-```
+## Privacy, Security, and Responsible Use
 
-For live, non-stubbed end-to-end checks of the three-class system (API must be
-running), see [Verifying the Three-Class System](#verifying-the-three-class-system).
+- **Keep patient data local:** Do not commit medical images, patient identifiers, clinical records, or other sensitive data to the repository.
+- **Treat model artifacts as sensitive:** Model parameters and updates can carry information about training data. Apply appropriate access controls and review privacy risks.
+- **Secure the API:** Configure authentication, restrict network exposure, validate uploaded files, set request-size limits, and use HTTPS when deploying beyond a local development environment.
+- **Protect secrets:** Store credentials and tokens outside source control. Rotate any secret that has already been committed; deleting it from the latest commit alone does not remove it from Git history.
+- **Review explanations critically:** Saliency maps and feature-importance plots are aids for model inspection, not proof that a prediction is correct or that the model relies on clinically meaningful evidence.
+- **Require clinical validation:** Evaluate across independent sites and populations, assess subgroup performance and failure modes, and obtain appropriate clinical, privacy, and regulatory review before considering real-world use.
 
----
+## Reproducibility Notes
 
-## Docker Deployment
+For reproducible experiments, record the following with each result:
 
-Two images, one command, no virtual environment to manage:
+- Dataset source, version, access conditions, and checksum or manifest
+- Patient-level train/validation/test split methodology and random seed
+- Image preprocessing and augmentation configuration
+- Model checkpoint, training configuration, and dependency versions
+- Per-class precision, recall, F1-score, ROC-AUC, confusion matrix, and confidence intervals
+- Federated setup, client partitioning, aggregation strategy, and communication rounds
 
-```bash
-docker compose up --build      # API on 127.0.0.1:8000, dashboard on 127.0.0.1:8501
-docker compose up --build -d   # detached
-docker compose logs -f api     # follow the inference service
-docker compose down            # stop; weights and patient records are kept
-```
-
-| Service | Image | Port (host) | What it runs |
-|---|---|---|---|
-| `api` | `tbsentinel-api` | `127.0.0.1:8000` | FastAPI + EfficientNet-B3 + Grad-CAM (`python -m src.inference.main`) |
-| `dashboard` | `tbsentinel-dashboard` | `127.0.0.1:8501` | Streamlit clinical dashboard (`streamlit run frontend/app.py`) |
-
-What the setup does deliberately:
-
-- **Weights are mounted, not baked in** — `artifacts/checkpoints/` is bind-mounted read-only, so
-  retraining never forces an image rebuild and a 129 MB checkpoint stays out of the layers.
-- **Config is mounted read-only** — edit `configs/inference/inference.yaml` (thresholds, colormap,
-  clinical copy) and `docker compose restart api` picks it up. No rebuild.
-- **Patient records live on the host** — `data/patient_records/` is a volume, so the SQLite store
-  survives `docker compose down` and stays inspectable at
-  `data/patient_records/assessments.db`.
-- **Loopback only** — both ports are published on `127.0.0.1`. The containers bind `0.0.0.0`
-  internally because a published port cannot reach a loopback-only listener, but nothing outside
-  this machine can connect.
-- **No CUDA by default** — torch is installed from the CPU wheel index, pinned to `2.5.1` (the
-  version these checkpoints were trained with). On a CUDA host:
-  `TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121 docker compose up --build`.
-- **Credentials via `.env`** — set `TBSENTINEL_USERNAME` / `TBSENTINEL_PASSWORD` in a `.env` file
-  next to `docker-compose.yml` to replace the shipped demo login.
-
-If `artifacts/checkpoints/multiclass_efficientnet_b3_best.pt` is missing the API container stops
-with a `FileNotFoundError` naming the expected path; see
-[docs/DOCKER.md](docs/DOCKER.md#troubleshooting) for that and the other common cases.
-
----
+Do not compare centralized and federated results as if they were directly equivalent unless the data splits, preprocessing, evaluation set, and metric definitions are aligned.
 
 ## Citation
 
-If you use TBSentinel in your research, please cite:
+If you reference this project in coursework or research, adapt the following BibTeX entry to match the final project metadata and the version you used:
 
 ```bibtex
-@software{tbsentinel2024,
-  title={TBSentinel: Federated Multimodal Clinical Decision Support for Tuberculosis Detection},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/TBSentinel}
+@misc{rawat2026tbsentinel,
+  title        = {TBSentinel: Federated Multimodal Clinical Decision Support System for Tuberculosis and Pneumonia Detection using Explainable AI},
+  author       = {Rawat, Shashank},
+  year         = {2026},
+  howpublished = {\url{https://github.com/Shashankrawat1504/TBSentinel}},
+  note         = {Academic research and engineering project}
 }
 ```
 
----
-
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is distributed under the [MIT License](LICENSE), subject to the terms in the repository's `LICENSE` file. Dataset licenses and usage restrictions remain separate and must be followed independently.
 
 ---
 
-## Acknowledgments
-
-- EfficientNet architecture by Google Research
-- Flower framework for Federated Learning
-- PyTorch Grad-CAM for explainability
-- Medical imaging community for datasets and best practices
-
----
-
-## Contact
-
-For questions, issues, or collaborations, please open an issue on GitHub or contact [your-email@example.com].
-=======
-# TBSentinel
->>>>>>> 3cf9965a09ac1ed16510ed4277cdae5a106c8d70
+<p align="center">
+  <sub>Built for research and learning. Clinical decisions must remain under qualified healthcare professionals.</sub>
+</p>
