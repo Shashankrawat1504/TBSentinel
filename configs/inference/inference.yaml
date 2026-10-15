@@ -1,0 +1,100 @@
+# Inference configuration for the TBSentinel Clinical Decision Support System.
+#
+# The served checkpoint defines the task: the number of classes is read from the
+# checkpoint itself, and ``class_names`` below must match its output order
+# (0 = normal, 1 = tb, 2 = pneumonia for the multi-class model).
+
+# Model selection
+model_type: multiclass  # multiclass (normal/tb/pneumonia) or binary_tb
+
+# Model paths, relative to the project root or absolute.
+checkpoint_path: ${paths.checkpoints_dir}/multiclass_efficientnet_b3_best.pt
+
+# Alternative checkpoints kept from the earlier phases:
+#   binary TB baseline: ${paths.checkpoints_dir}/tb_efficientnet_b3_best.pt
+#   federated FedAvg:   ${paths.checkpoints_dir}/tb_federated_fedavg_best.pt
+#   federated FedProx:  ${paths.checkpoints_dir}/tb_federated_fedprox_best.pt
+# Switching back to a binary checkpoint only requires changing this path and
+# ``class_names`` below.
+
+# Runtime settings
+device: auto  # auto, cuda, or cpu
+image_size: 300
+confidence_threshold: 0.5
+
+# Class names in model output order.
+class_names:
+  - normal
+  - tb
+  - pneumonia
+
+# Grad-CAM settings
+#
+# ``turbo`` is the default colormap: it is perceptually near-uniform, so a warm
+# hotspot keeps its weight across the scale (jet's bright cyan band reads as hot
+# when it is not).
+#
+# ``eigen_smooth`` is a pytorch-grad-cam option that removes the dominant
+# class-agnostic component. Measured on this checkpoint it made the maps *more*
+# diffuse (55-77% of the image above the 50% threshold, versus 7-33% without),
+# so it is off by default here — turn it on only to experiment.
+gradcam:
+  target_layer: auto  # auto-detect or specify layer name
+  colormap: turbo  # turbo (default), jet, inferno, viridis, plasma
+  alpha: 0.55  # Heatmap blend opacity (0.0 to 1.0)
+  # ``clip_percentile`` maps a *lower* percentile to full intensity. Measured on
+  # this checkpoint a 90th-99th percentile stretch inflated the share of the frame
+  # above 0.5 from 6-31% to 11-37%, so 100 (stretch disabled) ships: the map keeps
+  # the model's own contrast and a 0.5 activation keeps its meaning.
+  eigen_smooth: false  # measured to spread the map on this checkpoint
+  blur_kernel: 9  # Gaussian smoothing of the raw map (odd number; 1 disables)
+  clip_percentile: 100.0  # 100 keeps the map's own contrast (see note below)
+  focus_threshold: 0.5  # activation level counted as "hot" in the focus report
+
+# Clinical interpretation returned with every prediction.
+#
+# Wording lives here, not in code, so the API and the dashboard cannot drift
+# apart and a clinician can review the copy directly. ``headline`` accepts the
+# placeholders {confidence} and {prob_<class_name>} (e.g. {prob_tb}). The
+# ``disclaimer`` line is echoed with every structured explanation.
+clinical:
+  disclaimer: "TBSentinel is a research prototype. This screen is not a diagnosis: interpret it with the patient's history, examination and confirmatory tests."
+  normal:
+    label: Normal
+    tone: success
+    headline: "Model screen: <b>normal</b> chest radiograph with {confidence:.1%} confidence (Normal {prob_normal:.1%})."
+    notes:
+      - "No tuberculosis or pneumonia pattern was detected; the Grad-CAM map shows where the model looked to reach that call."
+      - "A normal screen does not rule out early or extrapulmonary disease — continue the pathway if symptoms or exposure history persist."
+      - "Low confidence or borderline probabilities should prompt human over-read."
+  tb:
+    label: Tuberculosis
+    tone: error
+    headline: "Model screen: <b>tuberculosis</b> pattern with {confidence:.1%} confidence (TB {prob_tb:.1%})."
+    notes:
+      - "Grad-CAM highlights the parenchymal regions that drove this call — verify they correspond to genuine radiographic abnormality."
+      - "Correlate with symptoms, exposure history, sputum AFB / CBNAAT and any prior imaging before acting on this screen."
+      - "A high-confidence flag is a triage aid only; it is not a diagnosis."
+  pneumonia:
+    label: Pneumonia
+    tone: warning
+    headline: "Model screen: <b>pneumonia / lung opacity</b> pattern with {confidence:.1%} confidence (Pneumonia {prob_pneumonia:.1%})."
+    notes:
+      - "The highlighted opacity pattern overlaps pneumonia and other causes of lung consolidation; check the Grad-CAM region against the radiograph."
+      - "Correlate with fever, sputum, oxygen saturation, inflammatory markers and local antimicrobial guidance."
+      - "Distinguishing pneumonia from tuberculosis on a single radiograph is unreliable; consider microbiology where TB is plausible."
+
+# API settings.
+#
+# The API has no authentication, so it binds to loopback by default and is only
+# reachable from this machine. For a deliberate LAN demo (another device has to
+# reach it) set host to 0.0.0.0 — or, faster, override it per run without editing
+# this file:
+#
+#   TBSENTINEL_API_HOST=0.0.0.0 python -m src.inference.main
+#   TBSENTINEL_API_PORT=8001 python -m src.inference.main
+api:
+  host: 127.0.0.1
+  port: 8001
+  reload: false
+  log_level: info

@@ -1,0 +1,94 @@
+[project]
+name = "tbsentinel"
+version = "0.1.0"
+description = "Federated Multimodal Clinical Decision Support System for TB and Pneumonia Detection using Explainable AI"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+dependencies = [
+    # Deep Learning
+    "torch>=2.1.0",
+    "torchvision>=0.16.0",
+    "torchaudio>=2.1.0",
+
+    # Federated Learning
+    "flwr[simulation]>=1.9.0",
+
+    # API & Serving
+    # fastapi>=0.143 required: older versions pin starlette<0.42, which
+    # conflicts with Streamlit 1.65+ (requires starlette>=0.46).
+    "fastapi>=0.143.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.6.0",
+
+    # Frontend
+    "streamlit>=1.32.0",
+    "gradio>=4.20.0",
+
+    # Explainable AI
+    "grad-cam>=1.5.0",
+    "shap>=0.45.0",
+    "captum>=0.7.0",
+
+    # Data & Processing
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "scikit-learn>=1.4.0",
+    "torchmetrics>=1.3.0",
+    "opencv-python-headless>=4.9.0",
+    "albumentations>=1.4.0",
+    "Pillow>=10.2.0",
+
+    # Configuration & Tracking
+    "hydra-core>=1.3.0",
+    "omegaconf>=2.3.0",
+    "wandb>=0.16.0",
+
+    # Utilities
+    "tqdm>=4.66.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "rich>=13.7.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "black>=24.2.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+    "ipykernel>=6.29.0",
+    "jupyter>=1.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=69.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+testpaths = ["tests"]

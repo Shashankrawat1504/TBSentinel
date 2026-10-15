@@ -1,0 +1,64 @@
+# TBSentinel — the whole system in two containers.
+#
+#   docker compose up --build          # build and start API + dashboard
+#   docker compose up --build -d       # same, detached
+#   docker compose logs -f api         # follow the inference log
+#   docker compose down                # stop (weights and records are kept)
+#
+# Then open http://localhost:8501 and sign in (demo credentials: admin /
+# tbsentinel2026 — set TBSENTINEL_PASSWORD to replace them, see below).
+#
+# Both ports are published on 127.0.0.1 only. The containers listen on 0.0.0.0
+# internally, because a published port cannot reach a loopback-only listener, but
+# nothing outside this machine can connect: the API is unauthenticated by design
+# and the dashboard is login-gated.
+
+name: tbsentinel
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+      args:
+        # CPU wheels by default. On a CUDA host with the NVIDIA runtime:
+        #   TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121 docker compose up --build
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}
+    image: tbsentinel-api:latest
+    container_name: tbsentinel-api
+    environment:
+      TBSENTINEL_API_HOST: 0.0.0.0
+      TBSENTINEL_API_PORT: "8000"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Weights stay on the host: mounted read-only, never baked into the image.
+      - ./artifacts/checkpoints:/app/artifacts/checkpoints:ro
+      # Config is mounted so thresholds, colormap and clinical copy can be edited
+      # and picked up with `docker compose restart api` rather than a rebuild.
+      - ./configs:/app/configs:ro
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    image: tbsentinel-dashboard:latest
+    container_name: tbsentinel-dashboard
+    depends_on:
+      # Waits for the API healthcheck, so the first page load already has a model.
+      api:
+        condition: service_healthy
+    environment:
+      TBSENTINEL_API_URL: http://api:8000
+      # Put TBSENTINEL_USERNAME / TBSENTINEL_PASSWORD in a .env file next to this
+      # file to replace the shipped demo credentials. See docs/AUTHENTICATION.md.
+      TBSENTINEL_USERNAME: ${TBSENTINEL_USERNAME:-admin}
+      TBSENTINEL_PASSWORD: ${TBSENTINEL_PASSWORD:-tbsentinel2026}
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      # Patient records (SQLite) survive `docker compose down` and stay inspectable
+      # on the host at data/patient_records/assessments.db.
+      - ./data/patient_records:/app/data/patient_records
+    restart: unless-stopped

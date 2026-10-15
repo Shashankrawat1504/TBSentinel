@@ -1,0 +1,15 @@
+name: efficientnet_b3_tb_image_baseline
+architecture: efficientnet_b3
+pretrained: true
+freeze_backbone: false
+num_classes: 2
+dropout: 0.3
+image_size: 300
+
+# Optional branch is disabled until verified tabular/image pairs exist.
+multimodal:
+  enabled: false
+  num_tabular_features: 0
+  hidden_dims: [128, 64]
+  fusion_dim: 256
+  fusion_dropout: 0.3

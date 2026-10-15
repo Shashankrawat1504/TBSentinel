@@ -1,0 +1,46 @@
+# Keep the build context small and free of anything that must not ship in an image.
+#
+# The images deliberately build without: model weights (mounted at run time),
+# patient records (a host volume), datasets, notebooks, virtual environments and
+# secrets. `docker compose up --build` sends only source, config and requirements.
+
+.git
+.gitignore
+.freebuff
+.github
+
+# Python runtime noise
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Weights, generated artifacts, data and experiments (all host-mounted instead)
+artifacts/
+data/
+notebooks/
+wandb/
+*.pt
+*.pth
+*.ipynb
+
+# Secrets and logs
+.env
+.env.*
+*.log
+
+# Tests and docs are not needed inside the running images
+tests/
+docs/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

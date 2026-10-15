@@ -1,0 +1,72 @@
+# syntax=docker/dockerfile:1
+#
+# TBSentinel inference API — FastAPI + EfficientNet-B3 + Grad-CAM.
+#
+# The image carries no model weights; the checkpoint directory is mounted from the
+# host at run time (see docker-compose.yml), so retraining never forces a rebuild.
+#
+#   docker build -f docker/Dockerfile.api -t tbsentinel-api .
+#
+# CPU wheels are the default (roughly a 1 GB image instead of 5 GB of CUDA runtime
+# that a CPU container never loads). On a CUDA host, build against the CUDA index
+# and run with the NVIDIA container runtime:
+#
+#   docker build -f docker/Dockerfile.api \
+#     --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121 \
+#     -t tbsentinel-api:cuda .
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app
+
+# libglib2.0-0 is needed by opencv (even the headless wheel) at import time and
+# slim ships neither library; libgl1 is installed as well because pytorch-grad-cam
+# is free to pull a non-headless opencv build into the same environment.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libglib2.0-0 libgl1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Unprivileged runtime user: the API reads the checkpoint and config and writes
+# nothing outside the container's own filesystem.
+RUN useradd --create-home --uid 1000 appuser
+
+WORKDIR /app
+
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+ARG TORCH_VERSION=2.5.1
+ARG TORCHVISION_VERSION=0.20.1
+
+# torch first, from the wheel index: the default PyPI build drags in the CUDA
+# runtime. Pinned to the versions these checkpoints were trained with, and the
+# index is verified to serve the pinned pair (plus its dependencies) for py3.11.
+RUN pip install --no-cache-dir --index-url "${TORCH_INDEX_URL}" \
+        "torch==${TORCH_VERSION}" "torchvision==${TORCHVISION_VERSION}"
+
+COPY docker/requirements-api.txt ./requirements-api.txt
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+COPY configs ./configs
+COPY src ./src
+
+# Build-time dependency check: importing the app resolves every package the server
+# needs at start-up, so a missing dependency fails the build here with a clear
+# error instead of surfacing as a 500 during a demo.
+RUN python -c "import src.inference.api as api; print('inference API import OK:', api.app.title)"
+
+# Inside a container the service has to listen on all interfaces for the published
+# port to reach it. Only 127.0.0.1 on the host is published by docker-compose.yml,
+# so the LAN exposure this project deliberately avoids is not reintroduced.
+ENV TBSENTINEL_API_HOST=0.0.0.0 \
+    TBSENTINEL_API_PORT=8000
+
+USER appuser
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"
+
+CMD ["python", "-m", "src.inference.main"]

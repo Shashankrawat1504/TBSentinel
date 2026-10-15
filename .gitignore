@@ -1,0 +1,119 @@
+# ==========================================
+# 1. Environments & Dependencies
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+bin/
+include/
+lib/
+share/
+
+# ==========================================
+# 2. Python Caches & Compiled Files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# 3. Environment Variables & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ==========================================
+# 4. Machine Learning Models & Large Artifacts
+# ==========================================
+# Exclude model weights and serialized checkpoints
+*.pt
+*.pth
+*.onnx
+*.bin
+*.h5
+*.hdf5
+*.ckpt
+*.pb
+*.tflite
+*.pkl
+*.pickle
+*.joblib
+
+# Project-specific ML folders (store models locally or in S3/GCS/DVC)
+artifacts/
+models/
+checkpoints/
+
+# ==========================================
+# 5. Datasets & Raw Data
+# ==========================================
+data/
+datasets/
+raw_data/
+processed_data/
+*.csv
+*.parquet
+*.feather
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# 6. Testing, Linting & Type Checking Caches
+# ==========================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ==========================================
+# 7. IDEs & Text Editors
+# ==========================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ==========================================
+# 8. OS Generated Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# 9. Tool & Framework Caches (Streamlit / Codebuff)
+# ==========================================
+.freebuff/
+.streamlit/secrets.toml
+wandb/

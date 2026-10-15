@@ -1,0 +1,52 @@
+# syntax=docker/dockerfile:1
+#
+# TBSentinel clinical dashboard — Streamlit.
+#
+# Dashboard only: the model lives in the API image, so this one stays small. The
+# backend address comes from TBSENTINEL_API_URL (set in docker-compose.yml to the
+# compose service name).
+#
+#   docker build -f docker/Dockerfile.frontend -t tbsentinel-dashboard .
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN useradd --create-home --uid 1000 appuser
+
+WORKDIR /app
+
+# streamlit + requests + pillow: the complete third-party set the dashboard
+# imports (frontend/requirements.txt), verified by walking its import closure.
+COPY frontend/requirements.txt ./frontend-requirements.txt
+RUN pip install --no-cache-dir -r frontend-requirements.txt
+
+COPY frontend ./frontend
+COPY .streamlit ./.streamlit
+
+# Syntax check for every dashboard module at build time (the pages run inside a
+# Streamlit runtime, so a plain import would need a server context).
+RUN python -m compileall -q frontend && echo "dashboard modules compile OK"
+
+# Where the dashboard looks for the API. The compose service name resolves on the
+# compose network; running this image alone needs an override.
+ENV TBSENTINEL_API_URL=http://api:8000
+
+# .streamlit/config.toml pins the address to loopback, which is right for a local
+# run and wrong inside a container: the flags below override it (CLI beats config)
+# so the published port can reach the server. docker-compose.yml publishes only
+# 127.0.0.1:8501 on the host, so the network exposure is unchanged.
+USER appuser
+EXPOSE 8501
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=4)"
+
+CMD ["streamlit", "run", "frontend/app.py", \
+     "--server.address=0.0.0.0", \
+     "--server.port=8501", \
+     "--server.headless=true", \
+     "--browser.gatherUsageStats=false"]

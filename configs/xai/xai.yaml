@@ -1,0 +1,15 @@
+# configs/xai/xai.yaml
+method: gradcam
+target_layer: auto
+checkpoint_path: ${paths.checkpoints_dir}/tb_efficientnet_b3_best.pt
+val_csv: ${data.val_csv}
+image_root: ${data.image_root}
+output_dir: ${paths.artifacts_dir}/explanations
+samples_per_category: 5
+image_size: ${model.image_size}
+colormap: jet
+alpha: 0.5
+device: ${device}
+save_figure: true
+save_overlay_only: true
+create_summary_grid: true

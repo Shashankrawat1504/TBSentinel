@@ -1,0 +1,47 @@
+# Runtime dependencies for the TBSentinel inference API image.
+#
+# This is the *serving* subset of requirements.txt, not the training set. It was
+# derived by walking every import (module level and inside functions) of
+# `src.inference.main` and `src.inference.api`, then mapping each third-party
+# module to the distribution that provides it — so nothing here is a guess.
+#
+# Deliberately NOT installed, and why:
+#   torch / torchvision  — installed separately from the CPU wheel index in
+#                          docker/Dockerfile.api, pinned to the versions the
+#                          checkpoints were trained and evaluated with.
+#   flwr, wandb, hydra-core, captum, shap, gradio, scikit-learn, torchmetrics,
+#   seaborn, torchaudio, python-dotenv
+#                        — training, federated-simulation or notebook tooling.
+#                          The API never imports them at start-up; the build runs
+#                          `python -c "import src.inference.api"` afterwards, so a
+#                          missing runtime package fails the build, not your demo.
+#   python-multipart MUST stay: FastAPI needs it to parse `File(...)` uploads and
+#                          it is invisible to import analysis.
+#
+# The floors below were checked with `pip install --dry-run -r docker/requirements-api.txt`:
+# on Python 3.11 the resolution lands on the same library versions this project is
+# verified against locally (albumentations 2.0.8, numpy 2.4.6, opencv-python-headless
+# 5.0.0.93, grad-cam 1.5.7, pandas 3.0.6, matplotlib 3.11.2, Pillow 12.3.0), so the
+# container is not a different dependency universe from the tested checkout.
+
+# API & serving
+# NOTE: fastapi>=0.143 is required for starlette>=0.46 compatibility.
+# Older fastapi pins starlette<0.42, which conflicts with recent Streamlit.
+fastapi>=0.143.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+pydantic>=2.6.0
+
+# Model input pipeline
+opencv-python-headless>=4.9.0
+albumentations>=1.4.0
+Pillow>=10.2.0
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Explainability rendering (Grad-CAM figure panel + colormap legend)
+grad-cam>=1.5.0
+matplotlib>=3.8.0
+
+# Configuration
+omegaconf>=2.3.0

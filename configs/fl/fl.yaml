@@ -1,0 +1,53 @@
+# configs/fl/fl.yaml
+framework: flower
+simulation: true
+
+# Federated strategy: "fedavg" or "fedprox"
+strategy:
+  name: fedavg
+  proximal_mu: 0.01
+
+num_clients: 3
+num_rounds: 5
+fraction_fit: 1.0
+fraction_evaluate: 1.0
+min_fit_clients: 3
+min_evaluate_clients: 3
+min_available_clients: 3
+
+# Client local training parameters
+local_epochs: 1
+batch_size: 8
+learning_rate: 0.0001
+weight_decay: 0.0001
+optimizer: adamw
+mixed_precision: true
+gradient_clip_norm: 1.0
+
+# Hardware resources per client in Flower simulation
+# Serialized on GPU (1.0) to prevent OOM on 4GB VRAM
+client_resources:
+  num_cpus: 1
+  num_gpus: 1.0
+
+# Evaluation settings
+evaluation:
+  use_fixed_validation_set: true
+  evaluate_global_model_each_round: true
+  batch_size: 16
+  num_workers: 2
+
+# Checkpoint settings
+checkpoint:
+  save_global_best: true
+  save_last: true
+  directory: ${paths.checkpoints_dir}
+  best_filename: tb_federated_${fl.strategy.name}_best.pt
+  last_filename: tb_federated_${fl.strategy.name}_last.pt
+
+# Logging
+wandb:
+  enabled: true
+  mode: offline
+  project: ${project_name}
+  run_name: tb-federated-${fl.strategy.name}

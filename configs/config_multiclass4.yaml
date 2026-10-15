@@ -1,0 +1,31 @@
+# Root configuration for the multi-class Normal / TB / Pneumonia / Pneumothorax experiment.
+#
+# Composes the shared project configuration and switches it to four classes.
+# The binary TB pipeline keeps using configs/config.yaml unchanged.
+# The 3-class pipeline keeps using configs/config_multiclass.yaml unchanged.
+#
+# Usage:
+#   python -m src.training.train_centralized_multiclass --config-name config_multiclass4
+
+defaults:
+  - config
+  - _self_
+
+model:
+  name: efficientnet_b3_multiclass4_baseline
+  num_classes: 4
+
+data:
+  multiclass:
+    enabled: false
+  multiclass4:
+    enabled: true
+
+train:
+  early_stopping:
+    monitor: macro_f1  # AUC is undefined for four classes
+  checkpoint:
+    best_filename: multiclass4_efficientnet_b3_best.pt
+    last_filename: multiclass4_efficientnet_b3_last.pt
+  wandb:
+    run_name: tb-efficientnet-b3-multiclass4

@@ -1,0 +1,48 @@
+
+# configs/config.yaml
+defaults:
+  - data: data
+  - model: model
+  - train: train
+  - fl: fl
+  - optional xai: xai
+  - optional inference: inference
+  - _self_
+
+# Project metadata
+project_name: TBSentinel
+experiment_name: ${train.wandb.run_name}
+seed: 42
+
+# Runtime settings
+device: auto  # auto, cuda, or cpu
+
+# Paths
+paths:
+  root_dir: ${hydra:runtime.cwd}
+  data_dir: ${paths.root_dir}/data
+  artifacts_dir: ${paths.root_dir}/artifacts
+  checkpoints_dir: ${paths.artifacts_dir}/checkpoints
+  logs_dir: ${paths.artifacts_dir}/logs
+  predictions_dir: ${paths.artifacts_dir}/predictions
+
+# Reproducibility
+reproducibility:
+  deterministic: true
+  benchmark: false
+
+# Logging
+logging:
+  level: INFO
+  save_config: true
+  save_metrics: true
+
+# Hydra settings
+hydra:
+  run:
+    dir: ${paths.artifacts_dir}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: false
+  job_logging:
+    root:
+      level: INFO

@@ -1,0 +1,40 @@
+# Streamlit theme for the TBSentinel clinical decision support UI.
+# Script-level config: picked up automatically when running
+#   streamlit run frontend/app.py
+# from any working directory.
+
+[theme]
+base = "light"
+primaryColor = "#0E7490"
+backgroundColor = "#F4F8FB"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
+linkColor = "#0E7490"
+borderColor = "#DFE8F0"
+codeBackgroundColor = "#EEF4F8"
+codeTextColor = "#0F172A"
+showWidgetBorder = true
+baseRadius = "14px"
+buttonRadius = "11px"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 15
+baseFontWeight = 400
+headingFontSizes = ["30px", "24px", "19px", "16px", "14px", "12px"]
+headingFontWeights = [800, 700, 700, 600, 600, 600]
+linkUnderline = false
+
+# Clinical accent colours
+blueColor = "#0E7490"
+greenColor = "#12805C"
+redColor = "#D93B37"
+orangeColor = "#D97706"
+yellowColor = "#B45309"
+grayColor = "#5B6B7F"
+
+[theme.sidebar]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7FAFC"
+textColor = "#0F172A"
+borderColor = "#E3EBF2"
+primaryColor = "#0E7490"

@@ -1,0 +1,33 @@
+# Streamlit defaults for TBSentinel.
+#
+# Safe defaults for a machine that stores patient records locally:
+#
+#   * server.address = 127.0.0.1
+#     The dashboard is reachable at http://localhost:8501 and nowhere else. Its
+#     login gate is a single shared demo password, so it must not be published to
+#     the local network by accident. For a deliberate LAN demo:
+#
+#       streamlit run frontend/app.py --server.address 0.0.0.0
+#
+#   * browser.gatherUsageStats = false
+#     No telemetry leaves the machine.
+#
+# CLI flags override everything here.
+
+[server]
+address = "127.0.0.1"
+port = 8501
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+# Professional clinical color palette
+primaryColor = "#0A2647"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1E293B"
+font = "sans serif"
+
+# Custom base font for professional medical UI
+base = "dark"
